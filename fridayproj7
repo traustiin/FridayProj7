@@ -1,0 +1,118 @@
+import tkinter as tk
+import sqlite3
+from tkinter import messagebox
+
+# Function to create the database and table if they don't exist
+def create_database():
+    conn = sqlite3.connect('user_accounts.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (email TEXT PRIMARY KEY, password TEXT)''')
+    conn.commit()
+    conn.close()
+
+# Function to handle sign-up process
+def sign_up():
+    def submit():
+        email = email_entry.get()
+        password = password_entry.get()
+        confirm_password = confirm_password_entry.get()
+
+        # Validate email format
+        if '@' not in email or '.' not in email:
+            messagebox.showerror("Error", "Invalid email format")
+            return
+
+        # Validate password
+        if password != confirm_password:
+            messagebox.showerror("Error", "Passwords do not match")
+            return
+
+        # Check if password is entered twice
+        if not password or not confirm_password:
+            messagebox.showerror("Error", "Please enter password twice")
+            return
+
+        # Connect to database and insert user information
+        conn = sqlite3.connect('user_accounts.db')
+        c = conn.cursor()
+        try:
+            c.execute("INSERT INTO users VALUES (?, ?)", (email, password))
+            conn.commit()
+            messagebox.showinfo("Success", "Sign up successful")
+            signup_window.destroy()
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Error", "User already exists")
+        conn.close()
+
+    signup_window = tk.Toplevel(root)
+    signup_window.title("Sign Up")
+
+    email_label = tk.Label(signup_window, text="Email:")
+    email_label.grid(row=0, column=0, padx=5, pady=5)
+    email_entry = tk.Entry(signup_window)
+    email_entry.grid(row=0, column=1, padx=5, pady=5)
+
+    password_label = tk.Label(signup_window, text="Password:")
+    password_label.grid(row=1, column=0, padx=5, pady=5)
+    password_entry = tk.Entry(signup_window, show="*")
+    password_entry.grid(row=1, column=1, padx=5, pady=5)
+
+    confirm_password_label = tk.Label(signup_window, text="Confirm Password:")
+    confirm_password_label.grid(row=2, column=0, padx=5, pady=5)
+    confirm_password_entry = tk.Entry(signup_window, show="*")
+    confirm_password_entry.grid(row=2, column=1, padx=5, pady=5)
+
+    signup_button = tk.Button(signup_window, text="Sign Up", command=submit)
+    signup_button.grid(row=3, columnspan=2, padx=5, pady=5)
+
+# Function to handle sign-in process
+def sign_in():
+    def check_login():
+        email = email_signin_entry.get()
+        password = password_signin_entry.get()
+
+        # Query database for user information
+        conn = sqlite3.connect('user_accounts.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
+        result = c.fetchone()
+        conn.close()
+
+        if result:
+            messagebox.showinfo("Success", "Login successful (Happy Easter Dr. Clary)")
+            signin_window.destroy()
+        else:
+            messagebox.showerror("Error", "Email or password incorrect")
+
+    signin_window = tk.Toplevel(root)
+    signin_window.title("Sign In")
+
+    email_signin_label = tk.Label(signin_window, text="Email:")
+    email_signin_label.grid(row=0, column=0, padx=5, pady=5)
+    email_signin_entry = tk.Entry(signin_window)
+    email_signin_entry.grid(row=0, column=1, padx=5, pady=5)
+
+    password_signin_label = tk.Label(signin_window, text="Password:")
+    password_signin_label.grid(row=1, column=0, padx=5, pady=5)
+    password_signin_entry = tk.Entry(signin_window, show="*")
+    password_signin_entry.grid(row=1, column=1, padx=5, pady=5)
+
+    signin_button = tk.Button(signin_window, text="Sign In", command=check_login)
+    signin_button.grid(row=2, columnspan=2, padx=5, pady=5)
+
+# GUI setup
+root = tk.Tk()
+root.title("User Portal")
+root.geometry("300x100")
+
+# Create database and table
+create_database()
+
+signup_button = tk.Button(root, text="Sign Up", command=sign_up)
+signup_button.pack(pady=10)
+
+signin_button = tk.Button(root, text="Sign In", command=sign_in)
+signin_button.pack(pady=10)
+
+root.mainloop()
